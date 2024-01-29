@@ -1,0 +1,8 @@
+# application.yml
+spring:
+  application:
+    extrafields:
+       basic: true
+       addresses: true
+       thirdparty: true
+       demographicInformation: true
