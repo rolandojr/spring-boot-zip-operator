@@ -4,6 +4,7 @@ import com.example.poc.zipoperator.configuration.ApplicationProperties;
 import com.example.poc.zipoperator.model.*;
 import com.example.poc.zipoperator.repository.PersonRepositoty;
 import com.example.poc.zipoperator.utils.Extrafields;
+import com.example.poc.zipoperator.utils.Utils;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static com.example.poc.zipoperator.utils.Utils.*;
 
 @Slf4j
 @Service
@@ -21,12 +25,31 @@ public class PersonServiceImpl implements PersonService {
     private PersonRepositoty personRepositoty;
     private ApplicationProperties properties;
 
+    // Helper methods
+
     @Override
     public Single<PersonData> findPersonById(String personId, List<String> extraFields) {
-        return searchPersonById(personId, extraFields);
+        List<String> extrafieldsNoImplemented = extraFields.stream().filter(field -> !properties.getExtraFields().get(field)).collect(Collectors.toList());
+        if (extrafieldsNoImplemented.isEmpty()) {
+            return searchPersonCallDb2(personId, extraFields);
+        }
+        return searchPersonCallPrtw(personId, extraFields);
     }
 
-    private Single<PersonData> searchPersonById(String personId, List<String> extraFields) {
+    private Single<PersonData> searchPersonCallPrtw(String personId, List<String> extraFields) {
+        return Single.fromCallable(() -> {
+            log.info("Calling to Prtw {}", Thread.currentThread().getName());
+            PersonData personData = new PersonData();
+            populateUserBasic(personData, personId, extraFields);
+            populateAddressBasic(personData, personId, extraFields);
+            populateThirdPartyBasic(personData, personId, extraFields);
+            populateDemographicInformationBasic(personData, personId, extraFields);
+            return personData;
+        }).subscribeOn(Schedulers.io());
+    }
+
+    private Single<PersonData> searchPersonCallDb2(String personId, List<String> extraFields) {
+        log.info("Calling to Db2 {}", Thread.currentThread().getName());
         PersonData personData = new PersonData();
         Single<UserBasic> userBasicSingle = getBasicEntity(
                 extraFields,
@@ -80,4 +103,6 @@ public class PersonServiceImpl implements PersonService {
                 repositoryFunction.apply(personId) :
                 Single.just(defaultEntity);
     }
+
+
 }

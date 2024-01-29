@@ -13,6 +13,6 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "spring.application")
 public class ApplicationProperties {
 
-    private Map<String, String> extraFields;
+    private Map<String, Boolean> extraFields;
 
 }

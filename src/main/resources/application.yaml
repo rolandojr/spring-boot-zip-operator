@@ -5,4 +5,4 @@ spring:
        basic: true
        addresses: true
        thirdparty: true
-       demographicInformation: true
+       demographicInformation: false
